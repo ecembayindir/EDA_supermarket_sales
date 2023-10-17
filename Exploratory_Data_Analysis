@@ -1,0 +1,211 @@
+import numpy as np
+import pandas as pd
+
+df = pd.read_csv('/kaggle/input/supermarket-sales/supermarket_sales.csv')
+
+pd.set_option('display.width', 500)
+pd.set_option('display.max_columns', None)
+df.info()
+df.head()
+df.tail()
+df.shape
+df.describe().T
+df.isnull().values.any()
+df.index
+
+###########EDA###########
+
+def check_df(dataframe, head=5):
+    print('########### Shape ###########')
+    print(dataframe.shape)
+    print('########### Type ###########')
+    print(dataframe.dtypes)
+    print('########### Head ###########')
+    print(dataframe.head(head))
+    print('########### Tail ###########')
+    print(dataframe.tail(head))
+    print('########### NA ###########')
+    print(dataframe.isnull().sum())
+    print('########### Quantiles ###########')
+    print(dataframe.describe([0, 0.05, 0.50, 0.95, 0.99]).T)
+
+print(check_df(df,head=5))
+
+##### Categorical Variables #####
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+def cat_summary (dataframe, col_name, plot=False):
+    print(pd.DataFrame({col_name : dataframe[col_name].value_counts(),
+                        "Ratio" : 100 * dataframe[col_name].value_counts() / len(dataframe)}))
+    print('############################################')
+
+    if plot:
+        sns.countplot(x=dataframe[col_name], data=dataframe)
+        plt.show(block=True)
+
+cat_summary(df,'gender_customer', plot=True )
+
+##### Numeric Variables #####
+
+def num_summary (dataframe, numerical_col, plot=False ):
+    quantiles = [ 0.05, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.95, 0.99]
+    print(dataframe[numerical_col].describe(quantiles).T)
+
+    if plot:
+        dataframe[numerical_col].hist()
+        plt.xlabel(numerical_col)
+        plt.title(numerical_col)
+        plt.show(block=True)
+
+num_summary(df, 'cogs', plot= True)
+
+##### Target Variables #####
+def target_summary_with_cat(dataframe, target, categorical_col):
+    print(pd.DataFrame({"TARGET_MEAN": dataframe.groupby(categorical_col)[target].mean()}),
+          end="\n\n\n")
+
+target_summary_with_cat(df, 'cogs', 'gender_customer')
+
+##### Correlation #####
+
+num_cols = [col for col in df.columns if df[col].dtype in [int, float]]
+corr = df[num_cols].corr()
+sns.set(rc={'figure.figsize': (12, 12)})
+sns.heatmap(corr, cmap="RdBu")
+plt.show()
+
+def grab_col_names(dataframe, cat_th= 10, car_th= 20):
+    cat_cols = [col for col in df.columns if str(df[col].dtypes) in ["category","object","bool"]]
+    num_but_cat = [col for col in df.columns if df[col].nunique() < 10 and df[col].dtypes in ["int", "float"]]
+    cat_but_car = [col for col in df.columns if df[col].nunique() > 20 and str(df[col].dtypes) in ["category", "object"]]
+    cat_cols = cat_cols + num_but_cat
+    cat_cols = [col for col in cat_cols if col not in cat_but_car]
+    num_cols = [col for col in df.columns if df[col].dtypes in ["int", "float"]]
+    num_cols = [col for col in num_cols if col not in cat_cols]
+    print(f"Observations: {df.shape[0]}")
+    print(f"Variables: {df.shape[1]}")
+    print(f"cat_cols: {len(cat_cols)}")
+    print(f'num_cols: {len(num_cols)}')
+    print(f'cat_but_car: {len(cat_but_car)}')
+    print(f'num_but_cat: {len(num_but_cat)}')
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 1000 entries, 0 to 999
+Data columns (total 17 columns):
+ #   Column           Non-Null Count  Dtype  
+---  ------           --------------  -----  
+ 0   invoice_id       1000 non-null   object 
+ 1   branch           1000 non-null   object 
+ 2   city             1000 non-null   object 
+ 3   customer_type    1000 non-null   object 
+ 4   gender_customer  1000 non-null   object 
+ 5   product_line     1000 non-null   object 
+ 6   unit_cost        1000 non-null   float64
+ 7   quantity         1000 non-null   int64  
+ 8   5pct_markup      1000 non-null   float64
+ 9   revenue          1000 non-null   float64
+ 10  date             1000 non-null   object 
+ 11  time             1000 non-null   object 
+ 12  payment_method   1000 non-null   object 
+ 13  cogs             1000 non-null   float64
+ 14  gm_pct           1000 non-null   float64
+ 15  gross_income     1000 non-null   float64
+ 16  rating           1000 non-null   float64
+dtypes: float64(7), int64(1), object(9)
+memory usage: 132.9+ KB
+########### Shape ###########
+(1000, 17)
+########### Type ###########
+invoice_id          object
+branch              object
+city                object
+customer_type       object
+gender_customer     object
+product_line        object
+unit_cost          float64
+quantity             int64
+5pct_markup        float64
+revenue            float64
+date                object
+time                object
+payment_method      object
+cogs               float64
+gm_pct             float64
+gross_income       float64
+rating             float64
+dtype: object
+########### Head ###########
+    invoice_id branch       city customer_type gender_customer            product_line  unit_cost  quantity  5pct_markup   revenue       date   time payment_method    cogs    gm_pct  gross_income  rating
+0  750-67-8428      A     Yangon        Member          Female       Health and beauty      74.69         7      26.1415  548.9715   01/05/19  13:08        Ewallet  522.83  4.761905       26.1415     9.1
+1  226-31-3081      C  Naypyitaw        Normal          Female  Electronic accessories      15.28         5       3.8200   80.2200   03/08/19  10:29           Cash   76.40  4.761905        3.8200     9.6
+2  631-41-3108      A     Yangon        Normal            Male      Home and lifestyle      46.33         7      16.2155  340.5255   03/03/19  13:23    Credit card  324.31  4.761905       16.2155     7.4
+3  123-19-1176      A     Yangon        Member            Male       Health and beauty      58.22         8      23.2880  489.0480  1/27/2019  20:33        Ewallet  465.76  4.761905       23.2880     8.4
+4  373-73-7910      A     Yangon        Normal            Male       Sports and travel      86.31         7      30.2085  634.3785   02/08/19  10:37        Ewallet  604.17  4.761905       30.2085     5.3
+########### Tail ###########
+      invoice_id branch       city customer_type gender_customer         product_line  unit_cost  quantity  5pct_markup    revenue       date   time payment_method    cogs    gm_pct  gross_income  rating
+995  233-67-5758      C  Naypyitaw        Normal            Male    Health and beauty      40.35         1       2.0175    42.3675  1/29/2019  13:46        Ewallet   40.35  4.761905        2.0175     6.2
+996  303-96-2227      B   Mandalay        Normal          Female   Home and lifestyle      97.38        10      48.6900  1022.4900   03/02/19  17:16        Ewallet  973.80  4.761905       48.6900     4.4
+997  727-02-1313      A     Yangon        Member            Male   Food and beverages      31.84         1       1.5920    33.4320   02/09/19  13:22           Cash   31.84  4.761905        1.5920     7.7
+998  347-56-2442      A     Yangon        Normal            Male   Home and lifestyle      65.82         1       3.2910    69.1110  2/22/2019  15:33           Cash   65.82  4.761905        3.2910     4.1
+999  849-09-3807      A     Yangon        Member          Female  Fashion accessories      88.34         7      30.9190   649.2990  2/18/2019  13:28           Cash  618.38  4.761905       30.9190     6.6
+########### NA ###########
+invoice_id         0
+branch             0
+city               0
+customer_type      0
+gender_customer    0
+product_line       0
+unit_cost          0
+quantity           0
+5pct_markup        0
+revenue            0
+date               0
+time               0
+payment_method     0
+cogs               0
+gm_pct             0
+gross_income       0
+rating             0
+dtype: int64
+########### Quantiles ###########
+               count        mean         std        min         0%         5%         50%         95%         99%          max
+unit_cost     1000.0   55.672130   26.494628  10.080000  10.080000  15.279000   55.230000   97.222000   99.710200    99.960000
+quantity      1000.0    5.510000    2.923431   1.000000   1.000000   1.000000    5.000000   10.000000   10.000000    10.000000
+5pct_markup   1000.0   15.379369   11.708825   0.508500   0.508500   1.955725   12.088000   39.166500   45.250750    49.650000
+revenue       1000.0  322.966749  245.885335  10.678500  10.678500  41.070225  253.848000  822.496500  950.265750  1042.650000
+cogs          1000.0  307.587380  234.176510  10.170000  10.170000  39.114500  241.760000  783.330000  905.015000   993.000000
+gm_pct        1000.0    4.761905    0.000000   4.761905   4.761905   4.761905    4.761905    4.761905    4.761905     4.761905
+gross_income  1000.0   15.379369   11.708825   0.508500   0.508500   1.955725   12.088000   39.166500   45.250750    49.650000
+rating        1000.0    6.972700    1.718580   4.000000   4.000000   4.295000    7.000000    9.700000    9.900000    10.000000
+None
+                 gender_customer  Ratio
+gender_customer                        
+Female                       501   50.1
+Male                         499   49.9
+############################################
+
+count    1000.00000
+mean      307.58738
+std       234.17651
+min        10.17000
+5%         39.11450
+10%        64.86000
+20%        93.08400
+30%       140.43300
+40%       185.80800
+50%       241.76000
+60%       310.21600
+70%       399.25200
+80%       507.86400
+90%       684.67700
+95%       783.33000
+99%       905.01500
+max       993.00000
+Name: cogs, dtype: float64
+
+                 TARGET_MEAN
+gender_customer             
+Female            319.138723
+Male              295.989739
+
+
